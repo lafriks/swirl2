@@ -37,7 +37,7 @@ func (d *Dao) StackGet(ctx context.Context, name string) (stack *dao.Stack, err 
 
 func (d *Dao) StackUpdate(ctx context.Context, stack *dao.Stack) (err error) {
 	old := &dao.Stack{}
-	return d.update(Role, stack.Name, old, func() interface{} {
+	return d.update(Stack, stack.Name, old, func() interface{} {
 		stack.CreatedAt = old.CreatedAt
 		stack.CreatedBy = old.CreatedBy
 		return stack
