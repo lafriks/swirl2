@@ -59,9 +59,7 @@ func (b *serviceBiz) Find(ctx context.Context, name string, status bool) (servic
 		return
 	}
 
-	if err == nil {
-		raw, err = indentJSON(r)
-	}
+	raw, err = indentJSON(r)
 	if err == nil {
 		service = newService(&s)
 		err = b.fillNetworks(ctx, service)
@@ -146,13 +144,14 @@ func (b *serviceBiz) Create(ctx context.Context, s *Service, user web.User) (err
 		return
 	}
 
-	if s.Mode == "replicated" {
+	switch s.Mode {
+	case "replicated":
 		spec.Mode.Replicated = &swarm.ReplicatedService{Replicas: &s.Replicas}
-	} else if s.Mode == "replicated-job" {
+	case "replicated-job":
 		spec.Mode.ReplicatedJob = &swarm.ReplicatedJob{TotalCompletions: &s.Replicas}
-	} else if s.Mode == "global" {
+	case "global":
 		spec.Mode.Global = &swarm.GlobalService{}
-	} else if s.Mode == "global-job" {
+	case "global-job":
 		spec.Mode.GlobalJob = &swarm.GlobalJob{}
 	}
 
@@ -746,7 +745,7 @@ func (s *Service) MergeTo(spec *swarm.ServiceSpec) (err error) {
 	}
 
 	// Host & DNS
-	if len(s.DNS.Options) == 0 && len(s.DNS.Options) == 0 && len(s.DNS.Options) == 0 {
+	if len(s.DNS.Options) == 0 {
 		spec.TaskTemplate.ContainerSpec.DNSConfig = nil
 	} else {
 		spec.TaskTemplate.ContainerSpec.DNSConfig = &swarm.DNSConfig{

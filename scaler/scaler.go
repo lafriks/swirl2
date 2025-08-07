@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cuigh/auxo/app/container"
+	"github.com/cuigh/auxo/app/ioc"
 	"github.com/cuigh/auxo/data"
 	"github.com/cuigh/auxo/data/set"
 	"github.com/cuigh/auxo/log"
@@ -128,7 +128,8 @@ func (s *Scaler) tryScale(service *swarm.Service, opts data.Options) {
 
 	logger := log.Get("scaler")
 	replicas := *service.Spec.Mode.Replicated.Replicas
-	if result.Type == scaleUp {
+	switch result.Type {
+	case scaleUp:
 		if replicas < max {
 			if err := s.d.ServiceScale(ctx, service.Spec.Name, service.Version.Index, replicas+step); err != nil {
 				logger.Errorf("scaler > Failed to scale service '%s': %v", service.Spec.Name, err)
@@ -136,7 +137,7 @@ func (s *Scaler) tryScale(service *swarm.Service, opts data.Options) {
 				logger.Infof("scaler > Service '%s' scaled up for: %v", service.Spec.Name, result.Reasons)
 			}
 		}
-	} else if result.Type == scaleDown {
+	case scaleDown:
 		if replicas > min {
 			if err := s.d.ServiceScale(ctx, service.Spec.Name, service.Version.Index, replicas-step); err != nil {
 				logger.Errorf("scaler > Failed to scale service '%s': %v", service.Spec.Name, err)
@@ -212,7 +213,7 @@ func (c *cpuChecker) Check(service string, low, high float64) (scaleType, float6
 	ctx, cancel := misc.Context(time.Minute)
 	defer cancel()
 
-	query := fmt.Sprintf(`avg(rate(container_cpu_user_seconds_total{container_label_com_docker_swarm_service_name="%s"}[1m]) * 100)`, service)
+	query := fmt.Sprintf(`avg(rate(ioc_cpu_user_seconds_total{ioc_label_com_docker_swarm_service_name="%s"}[1m]) * 100)`, service)
 	vector, err := c.mb.GetVector(ctx, query, "", time.Now())
 	if err != nil {
 		log.Get("scaler").Error("scaler > Failed to query metrics: ", err)
@@ -232,13 +233,13 @@ func (c *cpuChecker) Check(service string, low, high float64) (scaleType, float6
 }
 
 func Start() error {
-	s, err := container.TryFind(Name)
+	s, err := ioc.TryFind[*Scaler](Name)
 	if err == nil {
-		s.(*Scaler).Start()
+		s.Start()
 	}
 	return err
 }
 
 func init() {
-	container.Put(NewScaler, container.Name(Name))
+	ioc.Put(NewScaler, ioc.Name(Name))
 }

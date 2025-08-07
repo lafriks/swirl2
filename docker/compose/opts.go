@@ -12,7 +12,9 @@ import (
 // ConvertKVStringsToMapWithNil converts ["key=value"] to {"key":"value"}
 // but set unset keys to nil - meaning the ones with no "=" in them.
 // We use this in cases where we need to distinguish between
-//   FOO=  and FOO
+//
+//	FOO=  and FOO
+//
 // where the latter case just means FOO was mentioned but not given a value
 func ConvertKVStringsToMapWithNil(values []string) map[string]*string {
 	result := make(map[string]*string, len(values))
@@ -50,7 +52,7 @@ func ParseRestartPolicy(policy string) (container.RestartPolicy, error) {
 		p.MaximumRetryCount = count
 	}
 
-	p.Name = parts[0]
+	p.Name = container.RestartPolicyMode(parts[0])
 
 	return p, nil
 }

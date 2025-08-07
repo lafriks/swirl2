@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cuigh/auxo/app/container"
+	"github.com/cuigh/auxo/app/ioc"
 	"github.com/cuigh/auxo/errors"
 	"github.com/cuigh/swirl/misc"
 )
@@ -94,5 +94,5 @@ func newInterface() (i Interface) {
 }
 
 func init() {
-	container.Put(newInterface)
+	ioc.Put(newInterface)
 }

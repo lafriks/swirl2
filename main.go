@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/cuigh/auxo/app"
-	"github.com/cuigh/auxo/app/container"
 	"github.com/cuigh/auxo/app/flag"
+	"github.com/cuigh/auxo/app/ioc"
 	"github.com/cuigh/auxo/data"
 	"github.com/cuigh/auxo/data/valid"
 	"github.com/cuigh/auxo/errors"
@@ -51,7 +51,7 @@ func startServer() (err error) {
 
 	const prefix = "api."
 	g := s.Group("/api", findFilters("identifier", "authorizer")...)
-	container.Range(func(name string, service interface{}) bool {
+	ioc.Range(func(name string, service interface{}) bool {
 		if strings.HasPrefix(name, prefix) {
 			g.Handle("/"+name[len(prefix):], service)
 		}
@@ -92,13 +92,13 @@ func handleError(ctx web.Context, err error) {
 func findFilters(names ...string) []web.Filter {
 	var filters []web.Filter
 	for _, name := range names {
-		filters = append(filters, container.Find(name).(web.Filter))
+		filters = append(filters, ioc.Find[web.Filter](name))
 	}
 	return filters
 }
 
 func initSystem() error {
-	return container.Call(func(b biz.SystemBiz) error {
+	return ioc.Call(func(b biz.SystemBiz) error {
 		ctx, cancel := misc.Context(time.Minute)
 		defer cancel()
 
@@ -129,5 +129,5 @@ func loadSetting(sb biz.SettingBiz) *misc.Setting {
 }
 
 func init() {
-	container.Put(loadSetting)
+	ioc.Put(loadSetting)
 }

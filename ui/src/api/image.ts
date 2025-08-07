@@ -33,7 +33,6 @@ export interface Image {
     rootFS?: {
         type?: string;
         layers?: string[];
-        baseLayer?: string;
     };
     histories?: {
         id: string;

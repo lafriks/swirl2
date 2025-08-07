@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cuigh/auxo/app/container"
+	"github.com/cuigh/auxo/app/ioc"
 	"github.com/cuigh/auxo/data"
 	"github.com/cuigh/auxo/net/web"
 	"github.com/cuigh/swirl/dao"
@@ -112,24 +112,24 @@ func newOperator(user web.User) dao.Operator {
 }
 
 func init() {
-	container.Put(NewNetwork)
-	container.Put(NewNode)
-	container.Put(NewRegistry)
-	container.Put(NewService)
-	container.Put(NewTask)
-	container.Put(NewConfig)
-	container.Put(NewSecret)
-	container.Put(NewStack)
-	container.Put(NewImage)
-	container.Put(NewContainer)
-	container.Put(NewVolume)
-	container.Put(NewUser)
-	container.Put(NewRole)
-	container.Put(NewEvent)
-	container.Put(NewSetting)
-	container.Put(NewMetric)
-	container.Put(NewChart)
-	container.Put(NewSystem)
-	container.Put(NewSession)
-	container.Put(NewDashboard)
+	ioc.Put(NewNetwork)
+	ioc.Put(NewNode)
+	ioc.Put(NewRegistry)
+	ioc.Put(NewService)
+	ioc.Put(NewTask)
+	ioc.Put(NewConfig)
+	ioc.Put(NewSecret)
+	ioc.Put(NewStack)
+	ioc.Put(NewImage)
+	ioc.Put(NewContainer)
+	ioc.Put(NewVolume)
+	ioc.Put(NewUser)
+	ioc.Put(NewRole)
+	ioc.Put(NewEvent)
+	ioc.Put(NewSetting)
+	ioc.Put(NewMetric)
+	ioc.Put(NewChart)
+	ioc.Put(NewSystem)
+	ioc.Put(NewSession)
+	ioc.Put(NewDashboard)
 }

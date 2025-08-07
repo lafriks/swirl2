@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cuigh/auxo/app/container"
+	"github.com/containerd/errdefs"
+	"github.com/cuigh/auxo/app/ioc"
 	"github.com/cuigh/auxo/cache"
 	"github.com/cuigh/auxo/errors"
 	"github.com/cuigh/auxo/log"
 	"github.com/cuigh/auxo/util/lazy"
 	"github.com/cuigh/swirl/misc"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -26,7 +26,7 @@ type Docker struct {
 	c        *client.Client
 	locker   sync.Mutex
 	logger   log.Logger
-	nodes    cache.Value
+	nodes    cache.Value[map[string]*Node]
 	agents   sync.Map
 	networks sync.Map
 }
@@ -34,14 +34,14 @@ type Docker struct {
 func NewDocker() *Docker {
 	d := &Docker{
 		logger: log.Get("docker"),
-		nodes:  cache.Value{TTL: 30 * time.Minute},
+		nodes:  cache.Value[map[string]*Node]{TTL: 30 * time.Minute},
 	}
 	d.nodes.Load = d.loadCache
 	return d
 }
 
 func IsErrNotFound(err error) bool {
-	return client.IsErrNotFound(err)
+	return errdefs.IsNotFound(err)
 }
 
 func (d *Docker) call(fn func(c *client.Client) error) error {
@@ -83,8 +83,8 @@ func (d *Docker) agent(node string) (*client.Client, error) {
 		return d.client()
 	}
 
-	value, _ := d.agents.LoadOrStore(node, &lazy.Value{
-		New: func() (interface{}, error) {
+	value, _ := d.agents.LoadOrStore(node, &lazy.Value[*client.Client]{
+		New: func() (*client.Client, error) {
 			c, e := client.NewClientWithOpts(
 				client.WithHost("tcp://"+host),
 				client.WithVersion(misc.Options.DockerAPIVersion),
@@ -92,11 +92,11 @@ func (d *Docker) agent(node string) (*client.Client, error) {
 			return c, e
 		},
 	})
-	c, err := value.(*lazy.Value).Get()
+	c, err := value.(*lazy.Value[*client.Client]).Get()
 	if err != nil {
 		return nil, err
 	}
-	return c.(*client.Client), nil
+	return c, nil
 }
 
 func (d *Docker) getAgent(node string) (agent string, err error) {
@@ -115,7 +115,7 @@ func (d *Docker) getAgent(node string) (agent string, err error) {
 	return
 }
 
-func (d *Docker) loadCache() (interface{}, error) {
+func (d *Docker) loadCache() (map[string]*Node, error) {
 	c, err := d.client()
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (d *Docker) loadCache() (interface{}, error) {
 
 func (d *Docker) loadNodes(ctx context.Context, c *client.Client) (nodes map[string]*Node, err error) {
 	var list []swarm.Node
-	list, err = c.NodeList(ctx, types.NodeListOptions{})
+	list, err = c.NodeList(ctx, swarm.NodeListOptions{})
 	if err == nil {
 		nodes = make(map[string]*Node)
 		for _, n := range list {
@@ -169,7 +169,7 @@ func (d *Docker) loadAgents(ctx context.Context, c *client.Client) (agents map[s
 			filters.Arg("desired-state", string(swarm.TaskStateRunning)),
 			filters.Arg("service", pair[0]),
 		)
-		tasks, err = c.TaskList(ctx, types.TaskListOptions{Filters: args})
+		tasks, err = c.TaskList(ctx, swarm.TaskListOptions{Filters: args})
 		if err != nil {
 			return
 		}
@@ -197,5 +197,5 @@ type Node struct {
 }
 
 func init() {
-	container.Put(NewDocker)
+	ioc.Put(NewDocker)
 }

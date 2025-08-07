@@ -8,6 +8,7 @@ import (
 	"github.com/cuigh/auxo/net/web"
 	"github.com/cuigh/swirl/docker"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 )
 
@@ -16,7 +17,7 @@ type ContainerBiz interface {
 	Find(ctx context.Context, node, id string) (container *Container, raw string, err error)
 	Delete(ctx context.Context, node, id, name string, user web.User) (err error)
 	FetchLogs(ctx context.Context, node, id string, lines int, timestamps bool) (stdout, stderr string, err error)
-	ExecCreate(ctx context.Context, node, id string, cmd string) (resp types.IDResponse, err error)
+	ExecCreate(ctx context.Context, node, id string, cmd string) (resp container.ExecCreateResponse, err error)
 	ExecAttach(ctx context.Context, node, id string) (resp types.HijackedResponse, err error)
 	ExecStart(ctx context.Context, node, id string) error
 	Prune(ctx context.Context, node string, user web.User) (count int, size uint64, err error)
@@ -33,7 +34,7 @@ type containerBiz struct {
 
 func (b *containerBiz) Find(ctx context.Context, node, id string) (c *Container, raw string, err error) {
 	var (
-		cj types.ContainerJSON
+		cj container.InspectResponse
 		r  []byte
 	)
 
@@ -72,7 +73,7 @@ func (b *containerBiz) Delete(ctx context.Context, node, id, name string, user w
 	return
 }
 
-func (b *containerBiz) ExecCreate(ctx context.Context, node, id, cmd string) (resp types.IDResponse, err error) {
+func (b *containerBiz) ExecCreate(ctx context.Context, node, id, cmd string) (resp container.ExecCreateResponse, err error) {
 	return b.d.ContainerExecCreate(ctx, node, id, cmd)
 }
 
@@ -93,7 +94,7 @@ func (b *containerBiz) FetchLogs(ctx context.Context, node, id string, lines int
 }
 
 func (b *containerBiz) Prune(ctx context.Context, node string, user web.User) (count int, size uint64, err error) {
-	var report types.ContainersPruneReport
+	var report container.PruneReport
 	if report, err = b.d.ContainerPrune(ctx, node); err == nil {
 		count, size = len(report.ContainersDeleted), report.SpaceReclaimed
 		b.eb.CreateContainer(EventActionPrune, node, "", "", user)
@@ -137,7 +138,7 @@ type ContainerMount struct {
 	Propagation mount.Propagation `json:"propagation,omitempty"`
 }
 
-func newContainerMount(m types.MountPoint) *ContainerMount {
+func newContainerMount(m container.MountPoint) *ContainerMount {
 	return &ContainerMount{
 		Type:        m.Type,
 		Name:        m.Name,
@@ -150,7 +151,7 @@ func newContainerMount(m types.MountPoint) *ContainerMount {
 	}
 }
 
-func newContainerSummary(c *types.Container) *Container {
+func newContainerSummary(c *container.Summary) *Container {
 	container := &Container{
 		ID:          c.ID,
 		Name:        c.Names[0],
@@ -178,7 +179,7 @@ func newContainerSummary(c *types.Container) *Container {
 	return container
 }
 
-func newContainerDetail(c *types.ContainerJSON) *Container {
+func newContainerDetail(c *container.InspectResponse) *Container {
 	created, _ := time.Parse(time.RFC3339Nano, c.Created)
 	startedAt, _ := time.Parse(time.RFC3339Nano, c.State.StartedAt)
 	container := &Container{

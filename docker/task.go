@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/cuigh/swirl/misc"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -32,7 +32,7 @@ func (d *Docker) TaskList(ctx context.Context, node, service, state string, page
 		//	args.Add("name", name)
 		//}
 
-		tasks, err = c.TaskList(ctx, types.TaskListOptions{Filters: args})
+		tasks, err = c.TaskList(ctx, swarm.TaskListOptions{Filters: args})
 		total = len(tasks)
 		if err == nil && total > 0 {
 			sort.Slice(tasks, func(i, j int) bool {
@@ -60,7 +60,7 @@ func (d *Docker) TaskLogs(ctx context.Context, id string, lines int, timestamps 
 	err = d.call(func(c *client.Client) (err error) {
 		var (
 			rc   io.ReadCloser
-			opts = types.ContainerLogsOptions{
+			opts = container.LogsOptions{
 				ShowStdout: true,
 				ShowStderr: true,
 				Tail:       strconv.Itoa(lines),

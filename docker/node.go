@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 )
@@ -14,7 +13,7 @@ func (d *Docker) NodeList(ctx context.Context) (nodes []swarm.Node, err error) {
 	var c *client.Client
 	c, err = d.client()
 	if err == nil {
-		nodes, err = c.NodeList(ctx, types.NodeListOptions{})
+		nodes, err = c.NodeList(ctx, swarm.NodeListOptions{})
 		if err == nil {
 			sort.Slice(nodes, func(i, j int) bool {
 				return nodes[i].Description.Hostname < nodes[j].Description.Hostname
@@ -34,7 +33,7 @@ func (d *Docker) NodeUpdate(ctx context.Context, id string, version uint64, spec
 // NodeRemove remove a swarm node from cluster.
 func (d *Docker) NodeRemove(ctx context.Context, id string) error {
 	return d.call(func(cli *client.Client) (err error) {
-		return cli.NodeRemove(ctx, id, types.NodeRemoveOptions{})
+		return cli.NodeRemove(ctx, id, swarm.NodeRemoveOptions{})
 	})
 }
 
@@ -42,7 +41,7 @@ func (d *Docker) NodeRemove(ctx context.Context, id string) error {
 func (d *Docker) NodeCount(ctx context.Context) (count int, err error) {
 	err = d.call(func(cli *client.Client) (err error) {
 		var nodes []swarm.Node
-		nodes, err = cli.NodeList(ctx, types.NodeListOptions{})
+		nodes, err = cli.NodeList(ctx, swarm.NodeListOptions{})
 		if err == nil {
 			count = len(nodes)
 		}
@@ -65,5 +64,5 @@ func (d *Docker) NodeMap() (map[string]*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	return nodes.(map[string]*Node), nil
+	return nodes, nil
 }

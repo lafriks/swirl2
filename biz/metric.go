@@ -31,10 +31,10 @@ func NewMetric(setting *misc.Setting) MetricBiz {
 
 type metricBiz struct {
 	prometheus string
-	api        lazy.Value
+	api        lazy.Value[papi.API]
 }
 
-func (b *metricBiz) createAPI() (api interface{}, err error) {
+func (b *metricBiz) createAPI() (api papi.API, err error) {
 	if b.prometheus == "" {
 		return nil, errors.New("prometheus address is not configured")
 	}
@@ -161,7 +161,7 @@ func (b *metricBiz) getAPI() (api papi.API, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return v.(papi.API), nil
+	return v, nil
 }
 
 func (b *metricBiz) formatLabel(label string, metric model.Metric) string {

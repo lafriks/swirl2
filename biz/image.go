@@ -7,7 +7,6 @@ import (
 	"github.com/cuigh/auxo/data"
 	"github.com/cuigh/auxo/net/web"
 	"github.com/cuigh/swirl/docker"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/image"
 )
 
@@ -29,7 +28,7 @@ type imageBiz struct {
 
 func (b *imageBiz) Find(ctx context.Context, node, id string) (img *Image, raw string, err error) {
 	var (
-		i         types.ImageInspect
+		i         image.InspectResponse
 		r         []byte
 		histories []image.HistoryResponseItem
 	)
@@ -70,7 +69,7 @@ func (b *imageBiz) Delete(ctx context.Context, node, id string, user web.User) (
 }
 
 func (b *imageBiz) Prune(ctx context.Context, node string, user web.User) (count int, size uint64, err error) {
-	var report types.ImagesPruneReport
+	var report image.PruneReport
 	if report, err = b.d.ImagePrune(ctx, node); err == nil {
 		count, size = len(report.ImagesDeleted), report.SpaceReclaimed
 		b.eb.CreateImage(EventActionPrune, node, "", user)
@@ -114,9 +113,8 @@ type ImageGraphDriver struct {
 }
 
 type ImageRootFS struct {
-	Type      string   `json:"type"`
-	Layers    []string `json:"layers,omitempty"`
-	BaseLayer string   `json:"baseLayer,omitempty"`
+	Type   string   `json:"type"`
+	Layers []string `json:"layers,omitempty"`
 }
 
 type ImageHistory struct {
@@ -128,7 +126,7 @@ type ImageHistory struct {
 	CreatedBy string   `json:"createdBy,omitempty"`
 }
 
-func newImageSummary(is *types.ImageSummary) *Image {
+func newImageSummary(is *image.Summary) *Image {
 	i := &Image{
 		ID:          is.ID,
 		ParentID:    is.ParentID,
@@ -144,7 +142,7 @@ func newImageSummary(is *types.ImageSummary) *Image {
 	return i
 }
 
-func newImageDetail(is *types.ImageInspect, items []image.HistoryResponseItem) *Image {
+func newImageDetail(is *image.InspectResponse, items []image.HistoryResponseItem) *Image {
 	created, _ := time.Parse(time.RFC3339Nano, is.Created)
 	histories := make([]*ImageHistory, len(items))
 	for i, item := range items {
@@ -182,9 +180,8 @@ func newImageDetail(is *types.ImageInspect, items []image.HistoryResponseItem) *
 			Data: mapToOptions(is.GraphDriver.Data),
 		},
 		RootFS: ImageRootFS{
-			Type:      is.RootFS.Type,
-			Layers:    is.RootFS.Layers,
-			BaseLayer: is.RootFS.BaseLayer,
+			Type:   is.RootFS.Type,
+			Layers: is.RootFS.Layers,
 		},
 		Histories: histories,
 	}

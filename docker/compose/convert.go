@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	composetypes "github.com/cuigh/swirl/docker/compose/types"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/swarm"
 )
@@ -52,36 +52,36 @@ func AddStackLabel(namespace Namespace, labels map[string]string) map[string]str
 type networkMap map[string]composetypes.NetworkConfig
 
 // Networks from the compose-file type to the engine API type
-func Networks(namespace Namespace, networks networkMap, servicesNetworks map[string]struct{}) (map[string]types.NetworkCreate, []string) {
+func Networks(namespace Namespace, networks networkMap, servicesNetworks map[string]struct{}) (map[string]network.CreateOptions, []string) {
 	if networks == nil {
 		networks = make(map[string]composetypes.NetworkConfig)
 	}
 
 	externalNetworks := []string{}
-	result := make(map[string]types.NetworkCreate)
+	result := make(map[string]network.CreateOptions)
 	for internalName := range servicesNetworks {
-		network := networks[internalName]
-		if network.External.External {
-			externalNetworks = append(externalNetworks, network.Name)
+		n := networks[internalName]
+		if n.External.External {
+			externalNetworks = append(externalNetworks, n.Name)
 			continue
 		}
 
-		createOpts := types.NetworkCreate{
-			Labels:     AddStackLabel(namespace, network.Labels),
-			Driver:     network.Driver,
-			Options:    network.DriverOpts,
-			Internal:   network.Internal,
-			Attachable: network.Attachable,
+		createOpts := network.CreateOptions{
+			Labels:     AddStackLabel(namespace, n.Labels),
+			Driver:     n.Driver,
+			Options:    n.DriverOpts,
+			Internal:   n.Internal,
+			Attachable: n.Attachable,
 		}
 
-		if network.Ipam.Driver != "" || len(network.Ipam.Config) > 0 {
+		if n.Ipam.Driver != "" || len(n.Ipam.Config) > 0 {
 			createOpts.IPAM = &networktypes.IPAM{}
 		}
 
-		if network.Ipam.Driver != "" {
-			createOpts.IPAM.Driver = network.Ipam.Driver
+		if n.Ipam.Driver != "" {
+			createOpts.IPAM.Driver = n.Ipam.Driver
 		}
-		for _, ipamConfig := range network.Ipam.Config {
+		for _, ipamConfig := range n.Ipam.Config {
 			config := networktypes.IPAMConfig{
 				Subnet: ipamConfig.Subnet,
 			}
@@ -89,8 +89,8 @@ func Networks(namespace Namespace, networks networkMap, servicesNetworks map[str
 		}
 
 		networkName := namespace.Scope(internalName)
-		if network.Name != "" {
-			networkName = network.Name
+		if n.Name != "" {
+			networkName = n.Name
 		}
 		result[networkName] = createOpts
 	}

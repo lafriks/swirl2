@@ -9,7 +9,6 @@ import (
 	"time"
 
 	composetypes "github.com/cuigh/swirl/docker/compose/types"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
@@ -165,9 +164,9 @@ func Service(
 				MaxReplicas: service.Deploy.Placement.MaxReplicas,
 			},
 		},
-		EndpointSpec: endpoint,
-		Mode:         mode,
-		UpdateConfig: convertUpdateConfig(service.Deploy.UpdateConfig),
+		EndpointSpec:   endpoint,
+		Mode:           mode,
+		UpdateConfig:   convertUpdateConfig(service.Deploy.UpdateConfig),
 		RollbackConfig: convertUpdateConfig(service.Deploy.RollbackConfig),
 	}
 
@@ -701,7 +700,7 @@ func ParseSecrets(client *client.Client, requestedSecrets []*swarm.SecretReferen
 		args.Add("name", s.SecretName)
 	}
 
-	secrets, err := client.SecretList(ctx, types.SecretListOptions{
+	secrets, err := client.SecretList(ctx, swarm.SecretListOptions{
 		Filters: args,
 	})
 	if err != nil {
@@ -755,7 +754,7 @@ func ParseConfigs(client client.ConfigAPIClient, requestedConfigs []*swarm.Confi
 		args.Add("name", s.ConfigName)
 	}
 
-	configs, err := client.ConfigList(ctx, types.ConfigListOptions{
+	configs, err := client.ConfigList(ctx, swarm.ConfigListOptions{
 		Filters: args,
 	})
 	if err != nil {

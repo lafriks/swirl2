@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/cuigh/swirl/misc"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -14,7 +13,7 @@ import (
 // ConfigList return all configs.
 func (d *Docker) ConfigList(ctx context.Context, name string, pageIndex, pageSize int) (configs []swarm.Config, total int, err error) {
 	err = d.call(func(c *client.Client) (err error) {
-		opts := types.ConfigListOptions{}
+		opts := swarm.ConfigListOptions{}
 		if name != "" {
 			opts.Filters = filters.NewArgs()
 			opts.Filters.Add("name", name)
@@ -52,7 +51,7 @@ func (d *Docker) ConfigRemove(ctx context.Context, id string) error {
 // ConfigCreate create a config.
 func (d *Docker) ConfigCreate(ctx context.Context, spec *swarm.ConfigSpec) (id string, err error) {
 	err = d.call(func(c *client.Client) (err error) {
-		var resp types.ConfigCreateResponse
+		var resp swarm.ConfigCreateResponse
 		if resp, err = c.ConfigCreate(ctx, *spec); err == nil {
 			id = resp.ID
 		}

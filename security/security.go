@@ -1,12 +1,12 @@
 package security
 
 import (
-	"github.com/cuigh/auxo/app/container"
+	"github.com/cuigh/auxo/app/ioc"
 )
 
 const PkgName = "security"
 
 func init() {
-	container.Put(NewIdentifier, container.Name("identifier"))
-	container.Put(NewAuthorizer, container.Name("authorizer"))
+	ioc.Put(NewIdentifier, ioc.Name("identifier"))
+	ioc.Put(NewAuthorizer, ioc.Name("authorizer"))
 }

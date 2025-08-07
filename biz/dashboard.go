@@ -36,7 +36,6 @@ func NewDashboard(d dao.Interface, mb MetricBiz, eb EventBiz) DashboardBiz {
 
 type dashboardBiz struct {
 	d  dao.Interface
-	cb ChartBiz
 	mb MetricBiz
 	eb EventBiz
 }

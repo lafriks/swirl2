@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/cuigh/swirl/misc"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -14,7 +13,7 @@ import (
 // SecretList return all secrets.
 func (d *Docker) SecretList(ctx context.Context, name string, pageIndex, pageSize int) (secrets []swarm.Secret, total int, err error) {
 	err = d.call(func(c *client.Client) (err error) {
-		opts := types.SecretListOptions{}
+		opts := swarm.SecretListOptions{}
 		if name != "" {
 			opts.Filters = filters.NewArgs()
 			opts.Filters.Add("name", name)
@@ -52,7 +51,7 @@ func (d *Docker) SecretRemove(ctx context.Context, id string) error {
 // SecretCreate create a secret.
 func (d *Docker) SecretCreate(ctx context.Context, spec *swarm.SecretSpec) (id string, err error) {
 	err = d.call(func(c *client.Client) (err error) {
-		var resp types.SecretCreateResponse
+		var resp swarm.SecretCreateResponse
 		if resp, err = c.SecretCreate(ctx, *spec); err == nil {
 			id = resp.ID
 		}

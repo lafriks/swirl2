@@ -4,12 +4,12 @@ import (
 	"context"
 	"sort"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 )
 
 // NetworkCreate create a network.
-func (d *Docker) NetworkCreate(ctx context.Context, name string, options *types.NetworkCreate) error {
+func (d *Docker) NetworkCreate(ctx context.Context, name string, options *network.CreateOptions) error {
 	return d.call(func(client *client.Client) error {
 		resp, err := client.NetworkCreate(ctx, name, *options)
 		if err == nil && resp.Warning != "" {
@@ -20,9 +20,9 @@ func (d *Docker) NetworkCreate(ctx context.Context, name string, options *types.
 }
 
 // NetworkList return all networks.
-func (d *Docker) NetworkList(ctx context.Context) (networks []types.NetworkResource, err error) {
+func (d *Docker) NetworkList(ctx context.Context) (networks []network.Summary, err error) {
 	err = d.call(func(c *client.Client) (err error) {
-		networks, err = c.NetworkList(ctx, types.NetworkListOptions{})
+		networks, err = c.NetworkList(ctx, network.ListOptions{})
 		if err == nil {
 			sort.Slice(networks, func(i, j int) bool {
 				return networks[i].Name < networks[j].Name
@@ -36,8 +36,8 @@ func (d *Docker) NetworkList(ctx context.Context) (networks []types.NetworkResou
 // NetworkCount return number of networks.
 func (d *Docker) NetworkCount(ctx context.Context) (count int, err error) {
 	err = d.call(func(c *client.Client) (err error) {
-		var networks []types.NetworkResource
-		networks, err = c.NetworkList(ctx, types.NetworkListOptions{})
+		var networks []network.Summary
+		networks, err = c.NetworkList(ctx, network.ListOptions{})
 		if err == nil {
 			count = len(networks)
 		}
@@ -61,10 +61,10 @@ func (d *Docker) NetworkDisconnect(ctx context.Context, network, container strin
 }
 
 // NetworkInspect return network information.
-func (d *Docker) NetworkInspect(ctx context.Context, name string) (network types.NetworkResource, raw []byte, err error) {
+func (d *Docker) NetworkInspect(ctx context.Context, name string) (n network.Summary, raw []byte, err error) {
 	var c *client.Client
 	if c, err = d.client(); err == nil {
-		network, raw, err = c.NetworkInspectWithRaw(ctx, name, types.NetworkInspectOptions{})
+		n, raw, err = c.NetworkInspectWithRaw(ctx, name, network.InspectOptions{})
 	}
 	return
 }
@@ -72,16 +72,17 @@ func (d *Docker) NetworkInspect(ctx context.Context, name string) (network types
 // NetworkNames return network names by id list.
 func (d *Docker) NetworkNames(ctx context.Context, ids ...string) (names map[string]string, err error) {
 	var (
-		c       *client.Client
-		network types.NetworkResource
-		lookup  = func(id string) (n types.NetworkResource, e error) {
+		c      *client.Client
+		n      network.Summary
+		lookup = func(id string) (network.Summary, error) {
 			if c == nil {
-				if c, e = d.client(); e != nil {
-					return
+				var err error
+				c, err = d.client()
+				if err != nil {
+					return network.Summary{}, err
 				}
 			}
-			n, e = c.NetworkInspect(ctx, id, types.NetworkInspectOptions{})
-			return
+			return c.NetworkInspect(ctx, id, network.InspectOptions{})
 		}
 	)
 
@@ -91,12 +92,12 @@ func (d *Docker) NetworkNames(ctx context.Context, ids ...string) (names map[str
 		if ok {
 			names[id] = name.(string)
 		} else {
-			network, err = lookup(id)
+			n, err = lookup(id)
 			if err != nil {
 				return nil, err
 			}
-			names[id] = network.Name
-			d.networks.Store(id, network.Name)
+			names[id] = n.Name
+			d.networks.Store(id, n.Name)
 		}
 	}
 	return
